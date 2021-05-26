@@ -1,17 +1,12 @@
 {
-  "extends": ["tslint:recommended", "tslint-react", "tslint-config-prettier"],
-  "rulesDirectory": ["tslint-plugin-prettier"],
+  "defaultSeverity": "error",
+  "extends": "tslint-config-airbnb",
+  "jsRules": {},
   "rules": {
-    "prettier": true,
-    "interface-name": false
+    "eofline": false,
+    "object-literal-sort-keys": true,
+    "import-name": false,
+    "variable-name": false
   },
-  "compilerOptions": {
-    "strict": true,
-    "lib": ["es6"],
-    "module": "commonjs",
-    "rootDir": "tools",
-    "outDir": "build",
-    "inlineSourceMap": true
-  },
-  "include": ["pages/**/*.ts"]
+  "rulesDirectory": []
 }
