@@ -1,15 +1,9 @@
 // tslint:disable-next-line: import-name
 import React, { useState } from 'react';
-import Link from 'next/link';
 import Router from 'next/router';
-import Cookie from 'js-cookie';
-import jwtDecoded from 'jwt-decode';
-import {
-  AuthenticationDetails,
-  CognitoUser,
-  CognitoUserPool,
-  ICognitoUserData,
-} from 'amazon-cognito-identity-js';
+import jwtDecode from 'jwt-decode';
+import Link from 'next/link';
+import axios, { AxiosRequestConfig } from 'axios';
 import StyledLoginContiner from './components/StyledLoginContainer';
 import StyledLoginInput from './components/StyledLoginForm';
 import StyledLoginTitle from './components/StyledLoginTitle';
@@ -19,61 +13,51 @@ import StyledLink from '../../components/StyledLink';
 import StyledLoginInputContainer from './components/StyledLoginInputContainer';
 
 export interface decodedIdToken {
-  email: string;
+  exp: number;
   name: string;
-  profile: string;
+  role: string;
+  sub: string;
 }
 
-const userPool = new CognitoUserPool({
-  ClientId: '',
-  UserPoolId: '',
-});
+const USER_TOKEN = 'takeAwapp.token';
 
 const Login = () => {
-  const [email, setEmail] = useState('rafaelpedcustodio@gmail.com');
-  const [password, setPassword] = useState('C451z2#$');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const onSubmit = (event: { preventDefault: () => void }) => {
     event.preventDefault();
-
-    const data: ICognitoUserData = {
-      Pool: userPool,
-      Username: email,
-    };
-
-    const user = new CognitoUser(data);
-    const authDetails = new AuthenticationDetails({
-      Password: password,
-      Username: email,
-    });
-
-    user.authenticateUser(authDetails, {
-      onSuccess: (data, result) => {
-        console.log(result);
-        const ID_USER_TOKEN = 'takeAwapp.idToken';
-        const ACCESS_USER_TOKEN = 'takeAwapp.accessToken';
-        const acessToken = data.getAccessToken();
-        const idToken = data.getIdToken();
-        console.log(data);
-        Cookie.set(ID_USER_TOKEN, idToken);
-        Cookie.set(ACCESS_USER_TOKEN, acessToken);
-        const decodedIdToken: decodedIdToken = jwtDecoded(
-          data.getIdToken().getJwtToken()
-        ) as decodedIdToken;
-        if (decodedIdToken.profile === 'Admin') {
-          Router.push('/signup');
-        } else {
-          Router.push('/');
+    const requestConfig = {
+      baseURL: 'http://localhost:8080',
+      config: {
+        timeout: 30000,
+      },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+    } as AxiosRequestConfig;
+    const http = axios.create(requestConfig);
+    http
+      .post(
+        '/login',
+        JSON.stringify({
+          email: email,
+          password: password,
+        })
+      )
+      .then(({ status, headers }) => {
+        if (status === 200) {
+          const decoded: decodedIdToken = jwtDecode(headers.authorization);
+          localStorage.setItem(USER_TOKEN, JSON.stringify(decoded));
+          if (decoded.role === 'ADMIN') {
+            Router.push('/signup');
+          } else {
+            Router.push('/');
+          }
         }
-      },
-
-      onFailure: (err) => {
-        console.error('onFailure:', err);
-      },
-
-      newPasswordRequired: (data) => {
-        console.log('newPasswordRequired:', data);
-      },
-    });
+      })
+      .catch((error) => error);
   };
   return (
     <StyledLoginContiner>

@@ -2,11 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import Router from 'next/router';
 import Cookie from 'js-cookie';
-import jwtDecoded from 'jwt-decode';
-import {
-  CognitoUserPool,
-  CognitoUserAttribute,
-} from 'amazon-cognito-identity-js';
 import { decodedIdToken } from '../login/index';
 import StyledSignUpContainer from './components/StyledSignUpContainer';
 import StyledSignUpForm from './components/StyledSignUpForm';
@@ -16,7 +11,7 @@ import StyledSelect from '../../components/StyledSelect';
 import StyledSignUpInputContainer from './components/StyledSignUpInputContainer';
 import StyledSignUpTitle from './components/StyledSignUpTitle';
 
-const ID_USER_TOKEN = 'takeAwapp.idToken';
+const USER_TOKEN = 'takeAwapp.token';
 const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,51 +21,28 @@ const SignUp = () => {
   const [address, setAddress] = useState('');
   const [profile, setProfile] = useState('');
   const [userLoggedProfile, setUserLoggedProfile] = useState('');
-  const poolData = {
-    ClientId: '',
-    UserPoolId: '',
-  };
-  const userPool = new CognitoUserPool(poolData);
 
   useEffect(() => {
-    const token: string | undefined = Cookie.get(ID_USER_TOKEN);
+    const token: string | null = localStorage.getItem(USER_TOKEN);
     if (token) {
-      const decodedIdToken: decodedIdToken = jwtDecoded(
-        token
-      ) as decodedIdToken;
-      setUserLoggedProfile(decodedIdToken.profile);
+      const tokenObject: decodedIdToken = JSON.parse(token);
+      if (tokenObject.role === 'ADMIN') {
+        setUserLoggedProfile(tokenObject.role);
+      }
     }
   });
 
   const onCancelClick = () => {
-    const accessToken = Cookie.get('takeAwapp.accessToken');
-    const idToken = Cookie.get('takeAwapp.idToken');
-    if (accessToken && idToken) {
-      Cookie.remove('takeAwapp.accessToken');
-      Cookie.remove('takeAwapp.idToken');
+    const token: string | null = localStorage.getItem(USER_TOKEN);
+    if (token) {
+      localStorage.removeItem(USER_TOKEN);
     }
     Router.push('/login');
   };
 
   const onSubmit = (event: { preventDefault: () => void }) => {
     event.preventDefault();
-    const attributes = [
-      new CognitoUserAttribute({ Name: 'address', Value: address }),
-      new CognitoUserAttribute({ Name: 'gender', Value: gender }),
-      new CognitoUserAttribute({ Name: 'name', Value: name }),
-      new CognitoUserAttribute({ Name: 'given_name', Value: givenName }),
-      new CognitoUserAttribute({
-        Name: 'profile',
-        Value: userLoggedProfile === 'Admin' ? profile : 'Customer',
-      }),
-    ];
-    if (profile !== 'Admin') {
-      Router.push('/home');
-    }
-    userPool.signUp(email, password, attributes, [], (err, data) => {
-      if (err) console.log(err);
-      console.log(data);
-    });
+    console.log('submit');
   };
   return (
     <StyledSignUpContainer>
@@ -113,7 +85,7 @@ const SignUp = () => {
             value={password}
           />
         </StyledSignUpInputContainer>
-        {userLoggedProfile === 'Admin' ? (
+        {userLoggedProfile === 'ADMIN' ? (
           <StyledSelect
             id="profiles"
             onChange={(event: any): void => setProfile(event.target.value)}

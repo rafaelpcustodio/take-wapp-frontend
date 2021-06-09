@@ -4,8 +4,6 @@ import withAuth from '../src/components/auth/WithAuth';
 import axios from 'axios';
 import Cookie from 'js-cookie';
 
-const ID_USER_TOKEN = 'takeAwapp.accessToken';
-
 const onClick = () => {
   console.log(Cookie.getJSON('takeAwapp.accessToken').payload);
   const http = axios.create({
